@@ -1,0 +1,55 @@
+---
+title: Cracking
+author: nf4ll
+date: 2022-11-03 16:29:00 +0000
+categorie: [Tutotial, Cracking]
+tags: [Cracking]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/cracking/Cracking.PNG
+  width: 1276
+  height: 718
+---
+# Qué es el Cracking
+
+El _cracking_ es una técnica que consiste en evadir las medidas de seguridad. Estas medidas de seguridad, pueden ser aplicadas para las credenciales o para ciertos ficheros con información sensible dentro de una organización. En nuestro caso nos vamos a centrar en el _cracking_ de credenciales.
+
+El _craking_ de credenciales consiste en romper el cifrado de la contraseña, con el objetivo de poder visualizar la contraseña en texto plano. Para ello, tenemos que obtener el hash de la contraseña y posteriormente lanzar un ataque de fuerza bruta (o un ataque de diccionario) para poder romper el hash de la contraseña. 
+
+# Crackeo de contraseñas 
+
+En el crackeo de credenciales tenemos varios programas, pero los más utilizados son John The Ripper y Hashcat. En mi caso voy a utilizar John The Ripper. Hay que tener en cuenta que los ataques de fuerza bruta no son viables a día de hoy, ya que casi todas las contraseñas son muy largas y tardaríamos mucho tiempo para obtener la contraseña. Para mi caso, voy a utilizar un ataque de diccionario, ya que se que tiene que ver con la temática de una página web concreta.
+
+## Crear el diccionario
+
+Para crear los diccionarios tenemos las herramientas: CeWL, Crunch o con Bash scripting. En mi caso voy a usar CeWL, que almacena las palabras que obtiene de una página web y las de sus respectivos enlaces. Después de obtener el diccionario, siempre es recomendable modificarlo. Esta modificación puede ser con Bash scripting, con el fin de eliminar las palabras repetidas o palabras muy cortas si conoces la longitud mínima que puede tener la contraseña.
+
+![Desktop View](/assets/img/posts/cracking/cewl.PNG)
+
+Los parámetros nos indican:
+```bash
+cewl -d 0 https://url.com -w diccionario.txt
+-d #El nivel de profundidad que aplica la herramienta. 
+-w #Indica el diccionario donde se guardarán todas las palabras.
+```
+
+Después de aplicar la herramienta CeWL, eliminamos las palabras repetidas con ayuda de _awk_ y con un bucle while, añadimos la estructura. Sabemos la estructura por una pista. La estructura es la siguiente:
+- Un número
+- La palabra del diccionario obtenido con CeWL
+- Una _
+- Cuatro números
+
+## Cracking de contraseña
+Vamos a usar zip2john, una herramienta de John The Ripper, con la que obtenemos el hash del zip y lo guardamos en un archivo, en mi caso zip.hashes.
+
+![Desktop View](/assets/img/posts/cracking/hash.PNG)
+
+Después usamos la herramienta john, indicámndole como parámetro el diccionario que hemos creado y el fichero donde tenemos el hash que tenemos que romper.
+
+![Desktop View](/assets/img/posts/cracking/crack.PNG)
+
+Una vez hemos roto el hash podemos ver que nos indica la contraseña en texto plano, por lo que podríamos abrir el el archivo protegido con una contraseña.
+
+# Conclusión
+En John The Ripper podemos no indicar ningún diccionario o indicar un diccionario genérico, por lo que pasaremos a realizar un ataque de fuerza bruta. Con la contraseña que contiene números, carácteres especiales, mayúsculas y minúsculas tardará demasiado tiempo en dar con la contraseña, por lo que no es recomendable. Pero aun que no sea recomendable se puede realizar.

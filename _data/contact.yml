@@ -4,27 +4,18 @@
   type: github
   icon: 'fab fa-github'
 -
-  type: twitter
-  icon: 'fab fa-twitter'
+    type: LinkedIn
+    icon: 'fab fa-linkedin-in'   # icons powered by <https://fontawesome.com/>
+    url:  'https://www.linkedin.com/in/pablo-ph/'                  # Fill with your mastodon account page
 -
-  type: email
-  icon: 'fas fa-envelope'
-  noblank: true            # open link in current tab
+    type: hack-the-box
+    icon: 'fab fa-codepen'   # icons powered by <https://fontawesome.com/>
+    url:  'https://app.hackthebox.com/profile/763771'                  # Fill with your mastodon account page
 -
-  type: rss
-  icon: 'fas fa-rss'
-  noblank: true
-
-# Uncomment and complete the url below to enable more contact options
-# -
-#   type: mastodon
-#   icon: 'fab fa-mastodon'   # icons powered by <https://fontawesome.com/>
-#   url:  ''                  # Fill with your Mastodon account page, rel="me" will be applied for verification
-# -
-#   type: linkedin
-#   icon: 'fab fa-linkedin'   # icons powered by <https://fontawesome.com/>
-#   url:  ''                  # Fill with your Linkedin homepage
-# -
-#   type: stack-overflow
-#   icon: 'fab fa-stack-overflow'
-#   url:  ''                  # Fill with your stackoverflow homepage
+    type: Resume
+    icon: 'fas fa-user'   # icons powered by <https://fontawesome.com/>
+    url:  'https://accurate-science-bcd.notion.site/CV-Pablo-Partida-Huetos-a3531fba480f4f82b47570542c73ea3d'
+-
+    type: try-hack-me
+    icon: 'fas fa-cloud'   # icons powered by <https://fontawesome.com/>
+    url:  'https://tryhackme.com/p/nightfall9'                  # Fill with your mastodon account page

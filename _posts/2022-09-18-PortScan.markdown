@@ -1,0 +1,42 @@
+---
+title: PortScan
+author: nf4ll
+date: 2022-09-25 12:21:00 +0000
+categories: [Tools, Port Scanner]
+tags: [Tool, Network, Scanner]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/PortScan/PortScan.png
+  width: 1019
+  height: 567
+---
+# PortScan
+
+Es una herramienta desarrollada en el lenguaje de scripting de Linux. Esta herramienta se encarga de detectar los puertos abeirtos de la IP que le pases por parámetro. Después crea un archivo csv con los puertos abiertos. Esta herramienta ayuda para realizar reconocimientos activos y poder almacenar toda la información en archivos como pueden ser archivos de excell.
+
+## Instalación
+1. Clonamos el repositorio.
+```bash
+git clone https://github.com/Nf4ll/PortScan.git
+```
+2. Nos movemos a la carpeta y damos permisos de ejecución.
+```bash
+cd PortScan
+chmod +x PortScan.sh
+```
+
+## Manual
+En mi caso, el laboratorio está compuesto de una máquina kali, atacante y la máquina víctima metasploitable2 linux (Una máquina para practicar técnicas de hacking). Por ello tiene tantos puertos abeirtos y así se ve el funcionamiento con mejor claridad.
+Para ponerlo en funcionamiento únicamente tendríamos que hacer `./PortScan.sh 10.10.8.101` :  
+
+![Desktop View](/assets/img/posts/PortScan/comando.PNG)
+  
+Después obetendremos el formato csv. Este formato nos permitirá importarlo en un excell, donde podremos trabajar cómodamente con los datos, a la hora de hacer un pentest o vulnerar varias máquinas.  
+
+![Desktop View](/assets/img/posts/PortScan/csv.PNG)
+
+
+
+
+

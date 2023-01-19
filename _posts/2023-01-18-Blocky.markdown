@@ -1,0 +1,131 @@
+---
+title: Blocky
+author: nf4ll
+date: 2023-01-18 11:39:00 +0000
+categories: [Hack The Box, Machines]
+tags: [Wordpress, Web, Decompile, Authentication]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/Blocky/Blocky.PNG
+  width: 1200
+  height: 600
+---
+# Write Up
+
+About Blocky machine:
+- OS: Linux
+- Difficulty: Easy
+- Release date: 2017-Jul-21
+- IP: 10.10.10.37
+
+## Introduction 
+The purpose of this report is to find the vulnerability to get access to the machine and do a privilege escalation.
+
+## Tools
+In this machine I use the following tools:
+- Nmap
+- Wfuzz
+- Jdax-gui
+
+## Steps
+At first the machine is scanned. The results of the of the scan are the following:
+
+```bash
+nmap -sS -p- --min-rate 5000 --open -n -Pn -oG host 10.10.10.37
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-01-18 12:09 CET
+Nmap scan report for 10.10.10.37
+Host is up (0.048s latency).
+Not shown: 65530 filtered tcp ports (no-response), 1 closed tcp port (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE
+21/tcp    open  ftp
+22/tcp    open  ssh
+80/tcp    open  http
+25565/tcp open  minecraft
+
+Nmap done: 1 IP address (1 host up) scanned in 39.76 seconds
+```
+
+The web page can't load because the web page don't solve DNS resolution. I need to solve it adding IP in /etc/hosts file.
+
+![Desktop View](/assets/img/posts/Blocky/hosts.PNG)
+
+At this point, I search the web to get any interesting paths or any information.
+
+![Desktop View](/assets/img/posts/Blocky/web.PNG)
+
+I only get user Notch and the web page is powered by Wordpress.
+
+![Desktop View](/assets/img/posts/Blocky/webUser.PNG)
+
+Now I fuzz the web to get hidden paths or files. As a result, I get many interesting paths.
+
+```bash
+wfuzz -t 400 --hc=404 -L -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://blocky.htb/FUZZ           
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://blocky.htb/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                                                                                                                                                                                             
+=====================================================================
+
+000000001:   200        313 L    3592 W     52224 Ch    "# directory-list-2.3-medium.txt"                                                                                                                                                                                                                                                   
+000000003:   200        313 L    3592 W     52224 Ch    "# Copyright 2007 James Fisher"                                                                                                                                                                                                                                                     
+000000007:   200        313 L    3592 W     52224 Ch    "# license, visit http://creativecommons.org/licenses/by-sa/3.0/"                                                                                                                                                                                                                   
+000000519:   200        37 L     61 W       745 Ch      "plugins"                                                                                                                                                                                                                                                                           
+000000014:   200        313 L    3592 W     52224 Ch    "http://blocky.htb/"                                                                                                                                                                                                                                                                
+000000013:   200        313 L    3592 W     52224 Ch    "#"                                                                                                                                                                                                                                                                                 
+000000786:   200        200 L    2015 W     40838 Ch    "wp-includes"                                                                                                                                                                                                                                                                       
+000000012:   200        313 L    3592 W     52224 Ch    "# on atleast 2 different hosts"                                                                                                                                                                                                                                                    
+000000011:   200        313 L    3592 W     52224 Ch    "# Priority ordered case sensative list, where entries were found"                                                                                                                                                                                                                  
+000000010:   200        313 L    3592 W     52224 Ch    "#"                                                                                                                                                                                                                                                                                 
+000000009:   200        313 L    3592 W     52224 Ch    "# Suite 300, San Francisco, California, 94105, USA."                                                                                                                                                                                                                               
+000000008:   200        313 L    3592 W     52224 Ch    "# or send a letter to Creative Commons, 171 Second Street,"                                                                                                                                                                                                                        
+000000005:   200        313 L    3592 W     52224 Ch    "# This work is licensed under the Creative Commons"                                                                                                                                                                                                                                
+000000004:   200        313 L    3592 W     52224 Ch    "#"                                                                                                                                                                                                                                                                                 
+000000002:   200        313 L    3592 W     52224 Ch    "#"                                                                                                                                                                                                                                                                                 
+000000006:   200        313 L    3592 W     52224 Ch    "# Attribution-Share Alike 3.0 License. To view a copy of this"                                                                                                                                                                                                                     
+000001073:   403        11 L     32 W       296 Ch      "javascript"                                                                                                                                                                                                                                                                        
+000000190:   200        10 L     51 W       380 Ch      "wiki"                                                                                                                                                                                                                                                                              
+000007180:   200        69 L     199 W      2397 Ch     "wp-admin"                                                                                                                                                                                                                                                                          
+000010825:   200        25 L     347 W      10304 Ch    "phpmyadmin"                                                                                                                                                                                                                                                                        
+000000241:   200        0 L      0 W        0 Ch        "wp-content"                                                                                                                                                                                                                                                                        
+000045240:   200        313 L    3592 W     52224 Ch    "http://blocky.htb/"
+```
+
+Two archieves are found in the directory. The directory is called  _plugins_. I download the files and I inspect the files to get some information.
+
+![Desktop View](/assets/img/posts/Blocky/plugins.PNG)
+
+The credentials are writen in BlockyCore.jar. The credentials are read in the following picture.
+
+![Desktop View](/assets/img/posts/Blocky/credentials.PNG)
+
+I connect to the machine with SSH service because I find user and password.
+
+```bash
+sshpass -p '8YsqfCTnvxAUeduzjNSXe22' ssh notch@10.10.10.37
+```
+
+At this point, the user flag is dicovered.
+
+![Desktop View](/assets/img/posts/Blocky/user.PNG)
+
+Now, I verify my groups. 
+
+```bash
+notch@Blocky:~$ id
+uid=1000(notch) gid=1000(notch) groups=1000(notch),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),115(lpadmin),116(sambashare)
+```
+
+The user notch is in the sudoers group. I have a valid password so I do a privilege escalation with password and get the root flag. 
+
+![Desktop View](/assets/img/posts/Bashed/root.PNG)
+
+# Conclusion
+To hack this machine you need knowledge of web discoverment, enumeration and reverse engeneering.

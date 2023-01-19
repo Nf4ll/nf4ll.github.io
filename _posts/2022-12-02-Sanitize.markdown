@@ -1,0 +1,35 @@
+---
+title: Sanitize
+author: nf4ll
+date: 2022-12-11 12:21:00 +0000
+categories: [Hack The Box, Challenge]
+tags: [Web, SQL injection]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/sanitize/web.PNG
+  width: 700
+  height: 350
+---
+# Challenge: Sanitize
+
+The sanitize challenge is a Web-challenge. It includes the following description:
+"Can you escape the query context and log in as admin at my super secure login page?"
+
+## Vulnerability
+This vulnerability of this challenge is called SQL injection. SQL injection consists of executing a SQL sentence. With a SQL sentence we can: add, delete, modify or get data from a SQL database. In this case we use an injection to get data from the users table and we could get data from another table like passwords. 
+
+## Explotation
+1.  I go to the Web page and I can see a login. I try to basic credentials like admin:admin but I get the select query:
+![Desktop View](/assets/img/posts/sanitize/select.PNG)
+2. At this point I think that the vulnerability in the Web is an SQLi. I try to concat another select with union to get the data from the table users. I inject a payload but It doesn't works.  
+```sql
+' or 1=1 union select * from users 
+```
+![Desktop View](/assets/img/posts/sanitize/SQLi1.PNG)
+3. Now I fix the payload by adding ' to close the statement, so I don't get the error:
+```sql
+' or 1=1 union select * from users '
+```
+![Desktop View](/assets/img/posts/sanitize/SQLi2.PNG)
+

